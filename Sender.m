@@ -63,7 +63,7 @@ classdef Sender <handle
             case 'A1'
             case 'A2'
             case 'A3'
-            case 'A4'
+            case 'A2'
             case 'A5'
             case 'A6'
             case 'A7'
