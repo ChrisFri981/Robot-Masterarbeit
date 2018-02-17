@@ -4,12 +4,15 @@
  Sender.deinit;
  
  Number=2;          %Number of Motors
- COM='COM5';
+ COM='COM16';
  
  % Object Sender
  S=Sender;
  % Initialization of the Serial-Communication
  S.init(COM);
  % Initialization of the Motors
- S.init_Robot(Number);
- S.getGyro(1);
+M1=Motor(1,S);
+M2=Motor(2,S);
+M1.COMM_SET_CURRENT(1.0)
+S.read()
+packet=S.getPacket()

@@ -4,21 +4,20 @@ classdef Robot
     
     properties
         Number_Motors;          %Number of Motors
-        Motors=Motor;                  %Array of Motors
+        Motors;                  %Array of Motors
     end
     
     methods
-        function obj = Robot(Number_Motors)
+        function obj = Robot(Number_Motors,Serial)
             %ROBOT Construct an instance of this class
             %   Detailed explanation goes here
             
             if nargin ~= 0
             obj.Number_Motors=Number_Motors;
-            obj.Motors=Motor;
-            obj.Motors(Number_Motors)=Motor;
+            obj.Motors(Number_Motors)=Motor(Number_Motors,Serial);
             
-            for i=1:Number_Motors
-               obj.Motors(i).Name=['Module' int2str(i)];
+            for i=1:Number_Motors-1
+               obj.Motors(i)=Motor(i,Serial);
             end
             else
                 disp('Too few arguments');
