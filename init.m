@@ -13,9 +13,5 @@
  % Initialization of the Motors
 M1=Motor(1,S);
 M2=Motor(2,S);
-M1.COMM_SET_CURRENT(1.0)
-S.read()
-packet=S.getPacket();
-
-ack=S.InputBuffer.buffer_array(1:30);
+M1.COMM_SET_CURRENT(1.0);
 Sender.deinit();

@@ -4,6 +4,8 @@ classdef Motor < handle
         
         Number;                     %Number of Motor
         ACK;                        %Old Commant ACK
+        COMMAND;                    %Actual Command set
+        FAULT;                      %Get Fault Message
         pipe;                       %pipe Adress
         Gyroparameter;              %Gyrovalues
         Aktual_Position;            %Actual Postition
@@ -54,8 +56,18 @@ classdef Motor < handle
             b.buffer_append_int8(datatypes.set_COMM_PACKET_ID('COMM_SET_CURRENT'));
             b.buffer_append_int32(int32(current*1000));
             b.buffer_append_checksum();
-            obj.Arduino_UART.write(b.buffer_array);
             obj.ACK=false;
+            obj.COMMAND='COMM_SET_CURRENT';
+            count=0;
+            while obj.ACK==false
+                count=count+1;
+                if(count>=obj.Arduino_UART.Max_Retries)
+                    break
+                end
+                obj.Arduino_UART.write(b.buffer_array);   
+                obj.Arduino_UART.read();
+                obj.check_ACK();
+            end
         end
         
         function COMM_SET_CURRENT_BRAKE(obj,brake)
@@ -153,6 +165,22 @@ classdef Motor < handle
         end
         function COMM_NON(obj)
             disp('TODO');
+        end
+        function check_ACK(obj)
+         obj.Arduino_UART.getPacket();
+         if(obj.Arduino_UART.packet_buf~=-1)
+             if(obj.my_packet)
+              if(obj.Arduino_UART.packet_buf.buffer_array(3)==datatypes.set_COMM_PACKET_ID(obj.COMMAND)...
+                  && obj.Arduino_UART.packet_buf.buffer_array(4)== 65 && obj.Arduino_UART.packet_buf.buffer_array(5)== 67 ...
+                  && obj.Arduino_UART.packet_buf.buffer_array(6)== 75)
+              obj.ACK=true;
+              obj.Arduino_UART.packet_buf=-1;
+              end
+             end
+         end
+        end
+        function res=my_packet(obj)
+            res =obj.Arduino_UART.packet_buf.buffer_array(2)==obj.Number;
         end
     end
 end

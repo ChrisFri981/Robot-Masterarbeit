@@ -9,18 +9,20 @@ classdef Sender < handle
         Timeout=0.1;                %Timeout
         DataBits=8;                 %DataBits
         StopBit=1;                  %StopBit
-        InputBufferSize=2048;
-        
+        InputBufferSize=2048;       %InputBufferSize
+        Max_Retries=3;              %Number of Retries
+              
     end
     
     properties 
         COMPort;                    % Comport
         serial_obj;                 % Serial Object
         InputBuffer;                % Inputbuffer
+        packet_buf;                     %Last Packet 
     end
     
     methods (Static)
-        
+        %Function used to clear the COM Port at the end of the program
         function deinit()
             if ~isempty(instrfind)
                 fclose(instrfind);
@@ -58,12 +60,12 @@ classdef Sender < handle
             pause(1);
             
         end
-        
+      
         function read_write(obj,Outputdata)
             fwrite(obj.serial_obj,Outputdata,'uint8');
             obj.read();
         end
-        
+        % Reads 256 Bytes max at a time
         function read(obj)
            [back,len]=fread(obj.serial_obj,256 ,'uint8');
            obj.InputBuffer.buffer_array(obj.InputBuffer.index:obj.InputBuffer.index+len-1)=back;
@@ -74,7 +76,7 @@ classdef Sender < handle
             fwrite(obj.serial_obj,Outputdata,'uint8');
         end
         
-        function packet_buf=getPacket(obj)
+        function getPacket(obj)
             for i=1:obj.InputBuffer.index
                if obj.InputBuffer.buffer_array(i)==uint8(83)
                    if obj.InputBuffer.buffer_array(i+1)==uint8(84)
@@ -82,13 +84,13 @@ classdef Sender < handle
                            if obj.InputBuffer.buffer_array(i+3)==uint8(82)
                                if obj.InputBuffer.buffer_array(i+4)==uint8(84)
                                len=obj.InputBuffer.buffer_array(i+5);
-                               packet_buf=buffer_vesc(len);
-                               packet_buf.buffer_array(1:len)=obj.InputBuffer.buffer_array(i+5:double(i+4+len));                             
+                               obj.packet_buf=buffer_vesc(len);
+                               obj.packet_buf.buffer_array(1:len)=obj.InputBuffer.buffer_array(i+5:double(i+4+len));                             
                                %
                                InputBuffer_old=obj.InputBuffer.buffer_array(double(i+5+len):end);
                                obj.InputBuffer=buffer_vesc(obj.InputBufferSize);
                                obj.InputBuffer.buffer_array(1:length(InputBuffer_old))=InputBuffer_old;
-                               if(packet_buf.buffer_check_checksum())
+                               if(obj.packet_buf.buffer_check_checksum())
                                return;
                                end
                                return;
@@ -98,7 +100,7 @@ classdef Sender < handle
                    end
                end
             end
-            packet_buf=-1;
+            obj.packet_buf=-1;
         end   
     end
 end
