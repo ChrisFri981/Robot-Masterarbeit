@@ -185,7 +185,7 @@ methods
        end
        
        function buffer_append_checksum(obj)
-            crc=uint8(mod(sum(obj.buffer_array),256));
+            crc=uint8(mod(sum(obj.buffer_array(6:end)),256));
             obj.buffer_append_uint8(crc);
        end
        function res=buffer_check_checksum(obj)

@@ -14,11 +14,9 @@ classdef Sender < handle
     end
     
     properties 
-        
         COMPort;                    % Comport
         serial_obj;                 % Serial Object
         InputBuffer;                % Inputbuffer
-        idx;                        % Index
     end
     
     methods (Static)
@@ -53,8 +51,7 @@ classdef Sender < handle
             set(obj.serial_obj,'Parity',obj.Parity);
             set(obj.serial_obj,'Timeout',obj.Timeout);
             set(obj.serial_obj,'InputBufferSize',obj.InputBufferSize);
-            obj.InputBuffer=uint8(zeros(1,obj.InputBufferSize));
-            obj.idx=1;
+            obj.InputBuffer=buffer_vesc(obj.InputBufferSize);
             fopen(obj.serial_obj);
             mbox=msgbox('Serial Communication setup');
             uiwait(mbox);
@@ -69,26 +66,31 @@ classdef Sender < handle
         
         function read(obj)
            [back,len]=fread(obj.serial_obj,256 ,'uint8');
-           obj.InputBuffer(obj.idx:obj.idx+len-1)=back;
-           obj.idx=obj.idx+len+1;
+           obj.InputBuffer.buffer_array(obj.InputBuffer.index:obj.InputBuffer.index+len-1)=back;
+           obj.InputBuffer.index=obj.InputBuffer.index+len+1;
         end
         
         function write(obj,Outputdata)
             fwrite(obj.serial_obj,Outputdata,'uint8');
         end
         
-        function packet=getPacket(obj)
-            for i=1:obj.idx
-               if obj.InputBuffer(i)==uint8(83)
-                   if obj.InputBuffer(i+1)==uint8(84)
-                       if obj.InputBuffer(i+2)==uint8(65)
-                           if obj.InputBuffer(i+3)==uint8(82)
-                               if obj.InputBuffer(i+4)==uint8(84)
-                               len=obj.InputBuffer(i+5);
-                               packet=obj.InputBuffer(i+6:i+6+len);
-                               InputBuffer_old=obj.InputBuffer(double(i+6+len):end);
-                               obj.InputBuffer=zeros(1,obj.InputBufferSize);
-                               obj.InputBuffer(1:length(InputBuffer_old))=InputBuffer_old;
+        function packet_buf=getPacket(obj)
+            for i=1:obj.InputBuffer.index
+               if obj.InputBuffer.buffer_array(i)==uint8(83)
+                   if obj.InputBuffer.buffer_array(i+1)==uint8(84)
+                       if obj.InputBuffer.buffer_array(i+2)==uint8(65)
+                           if obj.InputBuffer.buffer_array(i+3)==uint8(82)
+                               if obj.InputBuffer.buffer_array(i+4)==uint8(84)
+                               len=obj.InputBuffer.buffer_array(i+5);
+                               packet_buf=buffer_vesc(len);
+                               packet_buf.buffer_array(1:len)=obj.InputBuffer.buffer_array(i+5:double(i+4+len));                             
+                               %
+                               InputBuffer_old=obj.InputBuffer.buffer_array(double(i+5+len):end);
+                               obj.InputBuffer=buffer_vesc(obj.InputBufferSize);
+                               obj.InputBuffer.buffer_array(1:length(InputBuffer_old))=InputBuffer_old;
+                               if(packet_buf.buffer_check_checksum())
+                               return;
+                               end
                                return;
                                end
                            end
@@ -96,6 +98,7 @@ classdef Sender < handle
                    end
                end
             end
+            packet_buf=-1;
         end   
     end
 end

@@ -3,12 +3,13 @@ classdef Motor < handle
     properties
         
         Number;                     %Number of Motor
+        ACK;                        %Old Commant ACK
         pipe;                       %pipe Adress
         Gyroparameter;              %Gyrovalues
         Aktual_Position;            %Actual Postition
         New_Position;               %New Position
         conf;                       %configuration
-        Arduino_UART;                     %SerialObjekt
+        Arduino_UART;               %SerialObjekt
         
     end
     
@@ -54,6 +55,7 @@ classdef Motor < handle
             b.buffer_append_int32(int32(current*1000));
             b.buffer_append_checksum();
             obj.Arduino_UART.write(b.buffer_array);
+            obj.ACK=false;
         end
         
         function COMM_SET_CURRENT_BRAKE(obj,brake)
